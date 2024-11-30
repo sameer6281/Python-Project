@@ -1,0 +1,102 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from googletrans import Translator, LANGUAGES
+
+class LanguageTranslatorApp:
+    def _init_(self, root):
+        self.root = root
+        self.root.title("Language Translator")
+        self.root.geometry("600x400")
+        self.root.resizable(False, False)
+        self.translator = Translator()
+        self.history = []
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        frame = tk.Frame(self.root, bg="#F7DC6F", relief=tk.RIDGE, borderwidth=5)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        title = tk.Label(frame, text="Language Translator", font=("Helvetica", 20, "bold"), bg="#F7DC6F")
+        title.pack(pady=10)
+
+        self.text_entry1 = tk.Text(frame, width=30, height=8, font=("Verdana", 12), relief=tk.RIDGE, borderwidth=2)
+        self.text_entry1.place(x=20, y=80)
+
+        self.text_entry2 = tk.Text(frame, width=30, height=8, font=("Verdana", 12), relief=tk.RIDGE, borderwidth=2)
+        self.text_entry2.place(x=320, y=80)
+
+        self.lang1 = ttk.Combobox(frame, values=list(LANGUAGES.values()), state="readonly", font=("Verdana", 10))
+        self.lang1.place(x=20, y=280)
+        self.lang1.set("english")
+
+        self.lang2 = ttk.Combobox(frame, values=list(LANGUAGES.values()), state="readonly", font=("Verdana", 10))
+        self.lang2.place(x=320, y=280)
+        self.lang2.set("hindi")
+
+        translate_btn = tk.Button(frame, text="Translate", command=self.translate, bg="#248aa2", fg="white",
+                                  font=("Verdana", 10, "bold"), cursor="hand2")
+        translate_btn.place(x=100, y=330)
+
+        swap_btn = tk.Button(frame, text="Swap", command=self.swap_languages, bg="#248aa2", fg="white",
+                             font=("Verdana", 10, "bold"), cursor="hand2")
+        swap_btn.place(x=250, y=330)
+
+        history_btn = tk.Button(frame, text="History", command=self.show_history, bg="#248aa2", fg="white",
+                                font=("Verdana", 10, "bold"), cursor="hand2")
+        history_btn.place(x=400, y=330)
+
+    def translate(self):
+        text = self.text_entry1.get("1.0", tk.END).strip()
+        src_lang = self.get_lang_code(self.lang1.get())
+        dest_lang = self.get_lang_code(self.lang2.get())
+
+        if not text:
+            messagebox.showerror("Error", "Please enter text to translate!")
+            return
+
+        try:
+            translation = self.translator.translate(text, src=src_lang, dest=dest_lang)
+            translated_text = translation.text
+            self.text_entry2.delete("1.0", tk.END)
+            self.text_entry2.insert(tk.END, translated_text)
+            self.history.append((text, src_lang, translated_text, dest_lang))
+        except Exception as e:
+            messagebox.showerror("Translation Error", str(e))
+
+    def swap_languages(self):
+        lang1 = self.lang1.get()
+        lang2 = self.lang2.get()
+        self.lang1.set(lang2)
+        self.lang2.set(lang1)
+
+    def show_history(self):
+        if not self.history:
+            messagebox.showinfo("History", "No history available.")
+            return
+
+        history_window = tk.Toplevel(self.root)
+        history_window.title("Translation History")
+        history_window.geometry("500x300")
+        history_window.resizable(False, False)
+
+        text_area = tk.Text(history_window, font=("Verdana", 10), wrap=tk.WORD)
+        text_area.pack(fill=tk.BOTH, expand=True)
+
+        for original, src, translated, dest in self.history:
+            text_area.insert(tk.END, f"From [{src}] to [{dest}]:\n")
+            text_area.insert(tk.END, f"Original: {original}\n")
+            text_area.insert(tk.END, f"Translated: {translated}\n\n")
+
+        text_area.config(state=tk.DISABLED)
+
+    def get_lang_code(self, lang_name):
+        for code, name in LANGUAGES.items():
+            if name.lower() == lang_name.lower():
+                return code
+        return "en"  # Default to English if not found
+
+if _name_ == "_main_":
+    root = tk.Tk()
+    app = LanguageTranslatorApp(root)
+    root.mainloop()
